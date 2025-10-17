@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salario Líquido UY · v7.1</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f1a; --card:rgba(15,23,42,.82); --ink:#e2e8f0; --muted:#94a3b8; --line:#1e293b;
+    --accent:#38bdf8; --accent2:#22d3ee; --good:#4ade80; --bad:#f87171; --ring:#22d3ee55;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; padding:16px; background:
+      radial-gradient(900px 600px at 10% -10%, #0ea5e9 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% -20%, #22d3ee22 0%, transparent 70%),
+      var(--bg);
+    color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; display:grid; gap:16px}
+  header h1{margin:0 0 4px; font-weight:800}
+  header p{margin:0; color:var(--muted)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; backdrop-filter:blur(12px)}
+  label{display:block; margin:0 0 6px; color:#cbd5e1; font-size:.95rem}
+  input[type="number"], select{
+    width:100%; height:48px; padding:12px; background:#0b1220; color:var(--ink);
+    border:1px solid #233044; border-radius:12px; outline:none; font-size:1rem;
+  }
+  input[type="number"]:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 4px var(--ring)}
+  .row{display:grid; gap:12px}
+  .grid{display:grid; gap:12px}
+  @media(min-width:680px){ .cols-2{grid-template-columns:1fr 1fr} .cols-3{grid-template-columns:repeat(3,1fr)} }
+  .btn{
+    width:100%; height:48px; border:0; border-radius:12px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:10px; font-weight:800;
+    background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#001018; box-shadow:0 8px 24px #0891b255;
+  }
+  .btn.ghost{background:#0b1220; color:#cbd5e1; border:1px solid var(--line)}
+  .kpis{display:grid; gap:12px}
+  @media(min-width:680px){ .kpis{grid-template-columns:1fr 1fr 1fr} }
+  .kpi{background:#0b1220; border:1px solid var(--line); border-radius:12px; padding:14px}
+  .kpi h3{margin:0 0 4px; color:#cbd5e1; font-size:.92rem}
+  .val{font-size:1.6rem; font-weight:800}
+  .val.good{color:var(--good)} .val.bad{color:var(--bad)}
+  .muted{color:var(--muted)} .tiny{font-size:.8rem}
+  details summary{cursor:pointer; font-weight:800}
+  table{width:100%; border-collapse:collapse; font-size:.95rem}
+  th,td{padding:10px; border-bottom:1px dashed #233044}
+  .tabs{display:flex; gap:8px; border-bottom:1px solid var(--line); overflow:auto; padding-bottom:6px}
+  .tab{padding:8px 12px; border:1px solid var(--line); border-bottom:0; border-radius:10px 10px 0 0; background:#0b1220; color:#cbd5e1; cursor:pointer; white-space:nowrap}
+  .tab.active{background:#0e1a2c; color:#fff; border-color:#2b3a54}
+  .tabpanel{display:none; padding:12px 0 0} .tabpanel.active{display:block}
+  .editor-table input{width:100%; height:40px; font-size:.95rem}
+  .actions{display:flex; gap:8px; flex-wrap:wrap}
+  footer{margin-top:8px; padding:12px; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; text-align:center}
+  footer a{color:#9bd8ff; text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="row">
+    <h1>Calculadora de Salario Líquido (Uruguay)</h1>
+    <p class="muted">IRPF real: Escala sobre Ingreso Computable − (Deducciones × 8%/14%). Escalas editables.</p>
+  </header>
+
+  <!-- ENTRADA -->
+  <section class="card row">
+    <div class="grid cols-2">
+      <div>
+        <label>Sueldo nominal (gravado) $U</label>
+        <input id="nominal" type="number" inputmode="numeric" min="0" step="1" value="122367">
+      </div>
+      <div>
+        <label>Seguro médico (beneficio computable IRPF) $U</label>
+        <input id="seguro" type="number" min="0" step="1" value="9654">
+        <div class="tiny muted">Cuenta para IRPF, no para BPS.</div>
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div>
+        <label>Tickets alimentación (no gravado) $U</label>
+        <input id="tickets" type="number" min="0" step="1" value="4000">
+      </div>
+      <div>
+        <label>Hijos a cargo</label>
+        <input id="hijos" type="number" min="0" step="1" value="0">
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div>
+        <label>Año / BPC mensual</label>
+        <div class="grid cols-2">
+          <select id="anio">
+            <option value="2024">2024</option>
+            <option value="2025" selected>2025</option>
+            <option value="2026">2026</option>
+          </select>
+          <input id="bpc" type="number" min="0" step="1" value="6576">
+        </div>
+        <div class="tiny muted">2024: 6210 · 2025: 6576 · 2026: editar</div>
+      </div>
+      <div>
+        <label>SNIS / FONASA</label>
+        <select id="snis">
+          <option value="0.06" selected>Fijo 6% (recomendado)</option>
+          <option value="auto">Automático por familia</option>
+          <option value="0.03">Manual 3%</option>
+          <option value="0.045">Manual 4,5%</option>
+          <option value="0.05">Manual 5%</option>
+          <option value="0.065">Manual 6,5%</option>
+          <option value="0.08">Manual 8%</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- NUEVOS AJUSTES REALISTAS -->
+    <div class="grid cols-2">
+      <div>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="incluyeExtras" type="checkbox" checked>
+          Incluir seguro y tickets en base IRPF
+        </label>
+        <div class="tiny muted">La mayoría de las empresas lo hace así.</div>
+      </div>
+      <div>
+        <label>Deducción adicional IRPF (%)</label>
+        <input id="dedAdicPct" type="number" min="0" max="10" step="0.1" value="0">
+        <div class="tiny muted">Para simular coberturas/ajustes (0–10%).</div>
+      </div>
+    </div>
+
+    <button class="btn" id="calcBtn">Calcular salario líquido</button>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section class="card row">
+    <div class="kpis">
+      <div class="kpi">
+        <h3>Líquido mensual</h3>
+        <div class="val good" id="kLiquido">$ —</div>
+        <div class="tiny muted" id="kLiquidoDet">Incluye tickets; seguro solo impacta IRPF.</div>
+      </div>
+      <div class="kpi">
+        <h3>IRPF del mes</h3>
+        <div class="val bad" id="kIrpf">$ —</div>
+        <div class="tiny muted" id="kIrpfDet">Bruto − (Deducciones × 8%/14%).</div>
+      </div>
+      <div class="kpi">
+        <h3>Aportes BPS</h3>
+        <div class="val" id="kBps">$ —</div>
+        <div class="tiny muted" id="kBpsDet">Jub 15% · SNIS · FRL 0,1%.</div>
+      </div>
+    </div>
+
+    <!-- Detalle mensual -->
+    <details>
+      <summary>Ver detalle del mes</summary>
+      <div class="row" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Concepto</th><th style="text-align:right">Monto ($U)</th></tr></thead>
+          <tbody id="tbodyMes"></tbody>
+          <tfoot>
+            <tr><th>Total descuentos</th><th style="text-align:right" id="tDesc">$ —</th></tr>
+            <tr><th>Líquido</th><th style="text-align:right" id="tLiq">$ —</th></tr>
+          </tfoot>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <!-- AVANZADO -->
+  <section class="card row">
+    <details id="adv">
+      <summary>🧩 Mostrar panel avanzado</summary>
+      <div class="row" style="margin-top:12px">
+        <div class="tabs" role="tablist" aria-label="Avanzado">
+          <button class="tab active" data-tab="tab-irpf" role="tab" aria-selected="true">IRPF</button>
+          <button class="tab" data-tab="tab-totales" role="tab" aria-selected="false">Totales anuales</button>
+          <button class="tab" data-tab="tab-config" role="tab" aria-selected="false">⚙️ Configuración</button>
+        </div>
+
+        <!-- TAB IRPF -->
+        <div id="tab-irpf" class="tabpanel active" role="tabpanel">
+          <div class="tiny muted">Detalle de cálculo IRPF con las escalas actuales.</div>
+          <div class="row" style="margin-top:10px">
+            <table>
+              <thead><tr><th>Desde</th><th>Hasta</th><th>Tasa</th><th style="text-align:right">Impuesto</th></tr></thead>
+              <tbody id="tbodyTramos"></tbody>
+            </table>
+            <div class="row">
+              <div class="tiny">Ingreso computable IRPF: <strong id="lblBase">$ —</strong></div>
+              <div class="tiny">Deducciones (aportes + familia <span id="lblAdicInfo"></span>): <strong id="lblDeds">$ —</strong> · Tasa ded.: <strong id="lblTasa">—</strong></div>
+              <div class="tiny">IRPF bruto: <strong id="lblBruto">$ —</strong> · IRPF neto: <strong id="lblNeto">$ —</strong> · Tasa efectiva: <strong id="lblEff">—</strong></div>
+              <div class="tiny muted" id="lblNotas">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB TOTALES (simplificado) -->
+        <div id="tab-totales" class="tabpanel" role="tabpanel">
+          <div class="grid cols-3">
+            <div>
+              <label>🎁 Aguinaldo por medio (opcional) $U</label>
+              <input id="aguinaldoMedio" type="number" min="0" step="1" placeholder="Por defecto: 1/2 sueldo" value="">
+              <div class="tiny muted">Se estima 2×/año (junio y diciembre).</div>
+            </div>
+            <div>
+              <label>💼 Salario vacacional (opcional) $U</label>
+              <input id="vacacionalAnual" type="number" min="0" step="1" value="0">
+              <div class="tiny muted">Se suma solo a IRPF (como monto anual).</div>
+            </div>
+            <div>
+              <label>Incluir vacacional</label>
+              <select id="useVac"><option value="1">Sí</option><option value="0" selected>No</option></select>
+            </div>
+          </div>
+
+          <div class="grid cols-3" style="margin-top:8px">
+            <div class="kpi"><h3>IRPF anual</h3><div class="val" id="anIrpf">$ —</div></div>
+            <div class="kpi"><h3>BPS anual</h3><div class="val" id="anBps">$ —</div></div>
+            <div class="kpi"><h3>Líquido anual</h3><div class="val good" id="anLiquido">$ —</div></div>
+          </div>
+          <div class="kpi" style="margin-top:8px"><h3>Promedio mensual</h3><div class="val" id="anProm">$ —</div></div>
+          <div class="tiny muted" id="anDet"></div>
+        </div>
+
+        <!-- TAB CONFIG -->
+        <div id="tab-config" class="tabpanel" role="tabpanel">
+          <div class="tiny muted">Editá las escalas mensuales en BPC. Guardamos en tu dispositivo.</div>
+          <table class="editor-table" style="margin-top:8px">
+            <thead><tr><th>Desde (BPC)</th><th>Hasta (BPC)</th><th>Tasa (%)</th><th></th></tr></thead>
+            <tbody id="tbodyCfg"></tbody>
+          </table>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn" id="btnAdd">+ Agregar tramo</button>
+            <button class="btn" id="btnSave">💾 Guardar escalas</button>
+            <button class="btn ghost" id="btnRestore">🔄 Restaurar oficiales 2025</button>
+          </div>
+          <div class="tiny muted" style="margin-top:6px">Recomendado: tramos contiguos sin solaparse. El último “Hasta” puede ser ∞.</div>
+        </div>
+
+      </div>
+    </details>
+  </section>
+
+  <footer id="foot">
+    <div>
+      🏦 <a href="https://www.bps.gub.uy/ConsultaHistorialLaboral" target="_blank" rel="noopener">Mi Historia Laboral (BPS)</a> ·
+      💼 <a href="https://www.gub.uy/direccion-general-impositiva/comunicacion/publicaciones/irpf-para-trabajadores-dependientes" target="_blank" rel="noopener">IRPF dependientes (DGI)</a> ·
+      🧾 <a href="https://www.dgi.gub.uy/formularios/3100" target="_blank" rel="noopener">Formulario 3100</a>
+    </div>
+    <div style="margin-top:6px">Creado por <strong>Renzo Dogliotti</strong> · <span id="stamp">Actualizado —</span></div>
+  </footer>
+</div>
+
+<script>
+  // ===== Helpers
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('es-UY',{style:'currency',currency:'UYU',maximumFractionDigits:0});
+  const nowStamp = ()=> new Intl.DateTimeFormat('es-UY',{day:'2-digit',month:'long',year:'numeric'}).format(new Date());
+  function updateStamp(){ $('stamp').textContent = `Actualizado ${nowStamp()}`; }
+
+  // ===== Escalas configurables (BPC) — oficiales 2025 por defecto
+  const LS_KEY='irpf_escalas_cfg_v71';
+  const OFFICIAL_2025 = [
+    {desdeBPC:0,   hastaBPC:7,    tasa:0.00},
+    {desdeBPC:7,   hastaBPC:10,   tasa:0.10},
+    {desdeBPC:10,  hastaBPC:15,   tasa:0.15},
+    {desdeBPC:15,  hastaBPC:30,   tasa:0.24},
+    {desdeBPC:30,  hastaBPC:50,   tasa:0.25},
+    {desdeBPC:50,  hastaBPC:75,   tasa:0.27},
+    {desdeBPC:75,  hastaBPC:115,  tasa:0.31},
+    {desdeBPC:115, hastaBPC:Infinity, tasa:0.36},
+  ];
+  let escalasCfg = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || OFFICIAL_2025.slice();
+
+  function escalasEnPesos(BPC){
+    return escalasCfg.map(t=>({
+      desde: t.desdeBPC * BPC,
+      hasta: Number.isFinite(t.hastaBPC) ? t.hastaBPC * BPC : Infinity,
+      tasa: t.tasa
+    }));
+  }
+  function impuestoPorTramos(base, tramos){
+    let imp=0, tabla=[];
+    for(const t of tramos){
+      const tramoBase = Math.max(0, Math.min(base, t.hasta) - t.desde);
+      const impTramo = Math.round(tramoBase * t.tasa);
+      imp += impTramo;
+      tabla.push({desde:t.desde, hasta:t.hasta, tasa:t.tasa, impuesto:impTramo});
+      if(base <= t.hasta) break;
+    }
+    return {imp, tabla};
+  }
+  function tasaFonasaAuto(nom, bpc, hijos){
+    const supera = nom > 2.5*bpc, anyHijo=(hijos||0)>0;
+    if(!supera) return anyHijo?0.05:0.03;
+    return anyHijo?0.06:0.045;
+  }
+
+  // ===== Editor de escalas
+  function renderCfg(){
+    const tb = $('tbodyCfg'); tb.innerHTML='';
+    escalasCfg.forEach((tr,idx)=>{
+      const hastaVal = (Number.isFinite(tr.hastaBPC)? tr.hastaBPC : '∞');
+      tb.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td><input type="number" step="0.01" min="0" value="${tr.desdeBPC}" data-i="${idx}" data-f="desde"></td>
+          <td><input type="text" value="${hastaVal}" data-i="${idx}" data-f="hasta"></td>
+          <td><input type="number" step="0.01" min="0" max="100" value="${(tr.tasa*100).toFixed(2)}" data-i="${idx}" data-f="tasa"></td>
+          <td><button class="btn ghost" data-del="${idx}" style="height:40px">Eliminar</button></td>
+        </tr>
+      `);
+    });
+    tb.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const i=+inp.dataset.i, f=inp.dataset.f, v=inp.value.trim();
+        if(f==='desde') escalasCfg[i].desdeBPC = +v||0;
+        if(f==='hasta') escalasCfg[i].hastaBPC = (v==='∞'||v==='inf'||v==='Infinity')? Infinity : (+v||0);
+        if(f==='tasa') escalasCfg[i].tasa = Math.max(0,Math.min(1,(+v||0)/100));
+      });
+    });
+    tb.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const i=+btn.dataset.del;
+        escalasCfg.splice(i,1); renderCfg(); calcAll();
+      });
+    });
+  }
+  $('btnAdd').addEventListener('click', ()=>{
+    const last = escalasCfg[escalasCfg.length-1] || {hastaBPC:0};
+    const start = Number.isFinite(last.hastaBPC)? last.hastaBPC : (escalasCfg.length? escalasCfg[escalasCfg.length-2].hastaBPC : 0);
+    escalasCfg.push({desdeBPC:start, hastaBPC:Infinity, tasa:0.00});
+    renderCfg();
+  });
+  $('btnSave').addEventListener('click', ()=>{
+    localStorage.setItem(LS_KEY, JSON.stringify(escalasCfg));
+    updateStamp();
+  });
+  $('btnRestore').addEventListener('click', ()=>{
+    escalasCfg = OFFICIAL_2025.slice(); renderCfg(); calcAll(); updateStamp();
+  });
+
+  // ===== Entradas/Salidas
+  const nominal=$('nominal'), seguro=$('seguro'), tickets=$('tickets'), hijos=$('hijos');
+  const anio=$('anio'), bpc=$('bpc'), snisSel=$('snis');
+  const incluyeExtras=$('incluyeExtras'), dedAdicPct=$('dedAdicPct');
+  const aguinaldoMedio=$('aguinaldoMedio'), vacacionalAnual=$('vacacionalAnual'), useVac=$('useVac');
+
+  const kLiquido=$('kLiquido'), kLiquidoDet=$('kLiquidoDet'),
+        kIrpf=$('kIrpf'), kIrpfDet=$('kIrpfDet'),
+        kBps=$('kBps'), kBpsDet=$('kBpsDet'),
+        tbodyMes=$('tbodyMes'), tDesc=$('tDesc'), tLiq=$('tLiq'),
+        tbodyTramos=$('tbodyTramos'),
+        lblBase=$('lblBase'), lblDeds=$('lblDeds'), lblTasa=$('lblTasa'),
+        lblBruto=$('lblBruto'), lblNeto=$('lblNeto'), lblEff=$('lblEff'), lblNotas=$('lblNotas'),
+        anIrpf=$('anIrpf'), anBps=$('anBps'), anLiquido=$('anLiquido'), anProm=$('anProm'), anDet=$('anDet');
+
+  // ===== Tabs
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ===== Núcleo de cálculo
+  function calcMes({BPC, sueldo, seguroBen, ticketsBen, hijosCnt, snisRate, baseIncluyeExtras, dedAdic}){
+    const tramos = escalasEnPesos(BPC);
+    // Aportes sobre sueldo
+    const jub = Math.round(sueldo*0.15), frl=Math.round(sueldo*0.001), snis=Math.round(sueldo*snisRate);
+    const aportes = jub+frl+snis;
+    // Ingreso computable IRPF (opción realista)
+    const extrasIRPF = baseIncluyeExtras ? (seguroBen + ticketsBen) : seguroBen;
+    const baseIRPF = sueldo + extrasIRPF; // (sin vacacional mensual; vacacional solo en anual)
+    // Deducciones: aportes + familia (20 BPC/año por hijo → /12)
+    const porHijoMes = (BPC*20)/12;
+    const dedFamilia = (hijosCnt||0) * porHijoMes;
+    let dedTot = aportes + Math.round(dedFamilia);
+    // Deducción adicional (%) sobre base IRPF
+    if(dedAdic>0){ dedTot += Math.round(baseIRPF * dedAdic); }
+    // Tasa 8/14 (180 BPC anuales)
+    const tasaD = (baseIRPF*12 <= 180*BPC) ? 0.14 : 0.08;
+    // IRPF
+    const {imp:irpfBruto, tabla} = impuestoPorTramos(baseIRPF, tramos);
+    const irpfCred = Math.round(dedTot * tasaD);
+    const irpf = Math.max(0, irpfBruto - irpfCred);
+    // Líquido
+    const descuentos = aportes + irpf;
+    const liquido = sueldo - descuentos + ticketsBen;
+    return {jub,frl,snis,aportes, baseIRPF, dedTot, tasaD, irpfBruto, irpf, tabla, liquido};
+  }
+
+  function calcAnual({BPC, sueldo, seguroBen, ticketsBen, hijosCnt, snisRate, baseIncluyeExtras, dedAdic, agMedio, vacAnual, usarVac}){
+    // Estimación simple: 12× mes “promedio” + 2× aguinaldo (tasa marginal) + vacacional (solo IRPF) si se declara
+    let IR=0, BP=0, LQ=0;
+    // Mes promedio
+    const M = calcMes({BPC,sueldo,seguroBen,ticketsBen,hijosCnt,snisRate,baseIncluyeExtras,dedAdic});
+    // 12 meses “promedio”
+    IR += M.irpf*12; BP += M.aportes*12; LQ += (sueldo - M.aportes - M.irpf + ticketsBen)*12;
+
+    // Aguinaldos (jun/dic) — IRPF marginal + BPS completos sobre aguinaldo
+    const ag = (agMedio!=='' && +agMedio>=0) ? +agMedio : Math.round(sueldo/2);
+    if(ag>0){
+      const tr=escalasEnPesos(BPC);
+      // tasa marginal: diferencia de IRPF al agregar el aguinaldo a la base IRPF del mes (usamos base promedio)
+      const {imp:br} = impuestoPorTramos(M.baseIRPF, tr);
+      const {imp:br2} = impuestoPorTramos(M.baseIRPF + ag, tr);
+      const irMarg = Math.max(0, br2 - br);
+      const jubA=Math.round(ag*0.15), frlA=Math.round(ag*0.001), snisA=Math.round(ag*snisRate);
+      // x2 (jun/dic)
+      IR += irMarg*2; BP += (jubA+frlA+snisA)*2; LQ += (ag - (jubA+frlA+snisA) - irMarg)*2;
+    }
+
+    // Vacacional (opcional): solo IRPF anual
+    if(usarVac && vacAnual>0){
+      const tr=escalasEnPesos(BPC);
+      const {imp:brV} = impuestoPorTramos(M.baseIRPF, tr);
+      const {imp:brV2} = impuestoPorTramos(M.baseIRPF + vacAnual, tr);
+      const irMargVac = Math.max(0, brV2 - brV);
+      IR += irMargVac; // no afecta BPS ni líquido directo salvo IRPF
+      LQ -= irMargVac;
+    }
+
+    return {IR,BP,LQ, agValor:ag};
+  }
+
+  function calcAll(){
+    // BPC por año
+    const y = anio.value;
+    if(y==='2024') bpc.value=6210;
+    if(y==='2025') bpc.value=6576;
+
+    const BPC=+bpc.value||0;
+    const sueldo=+nominal.value||0, seg=+seguro.value||0, tks=+tickets.value||0, hijosCnt=+hijos.value||0;
+    // SNIS
+    let snisRate=0.06;
+    const snisOpt=snisSel.value;
+    if(snisOpt==='auto') snisRate = tasaFonasaAuto(sueldo, BPC, hijosCnt);
+    else if(!isNaN(+snisOpt)) snisRate = +snisOpt;
+
+    const baseIncluyeExtras = incluyeExtras.checked;
+    const dedAdic = Math.max(0, Math.min(0.10, (+$('dedAdicPct').value||0)/100));
+
+    // Mensual (simulación “promedio”)
+    const M = calcMes({BPC,sueldo,seguroBen:seg,ticketsBen:tks,hijosCnt,snisRate,baseIncluyeExtras,dedAdic});
+
+    // KPIs
+    $('kLiquido').textContent = fmt(M.liquido);
+    $('kLiquidoDet').textContent = `Incluye tickets ${fmt(tks)}. Seguro ${fmt(seg)} solo impacta IRPF.`;
+    $('kIrpf').textContent = fmt(M.irpf);
+    $('kIrpfDet').textContent = `Bruto ${fmt(M.irpfBruto)} − (Deducciones ${fmt(M.dedTot)} × ${(M.tasaD*100).toFixed(0)}%).`;
+    $('kBps').textContent = fmt(M.aportes);
+    $('kBpsDet').textContent = `Jub ${fmt(M.jub)} · SNIS ${fmt(M.snis)} · FRL ${fmt(M.frl)}`;
+
+    // Detalle mensual
+    const rows=[
+      ['Sueldo gravado', sueldo],
+      ['Aporte jubilatorio 15%', -M.jub],
+      [`SNIS (${(snisRate*100).toFixed(1).replace('.0','')}%)`, -M.snis],
+      ['FRL (0,1%)', -M.frl],
+      ['IRPF', -M.irpf],
+      ['Ingreso computable IRPF', M.baseIRPF],
+      ['Deducciones IRPF (aportes + familia)', -(M.dedTot)],
+      ['Tickets (no gravado, suma al bolsillo)', tks],
+    ];
+    $('tbodyMes').innerHTML = rows.map(([t,v])=>`<tr><td>${t}</td><td style="text-align:right">${fmt(v)}</td></tr>`).join('');
+    $('tDesc').textContent = fmt(M.aportes + M.irpf);
+    $('tLiq').textContent = fmt(M.liquido);
+
+    // IRPF (tramos + labels)
+    const tramos = escalasEnPesos(BPC);
+    let html='';
+    for(const t of M.tabla){
+      const desdeBPC = t.desde / BPC;
+      const hastaBPC = Number.isFinite(t.hasta) ? (t.hasta/BPC) : null;
+      html += `<tr><td>${desdeBPC.toFixed(0)} BPC</td><td>${hastaBPC? hastaBPC.toFixed(0)+' BPC':'—'}</td><td>${(t.tasa*100).toFixed(0)}%</td><td style="text-align:right">${fmt(t.impuesto)}</td></tr>`;
+      if(M.baseIRPF <= t.hasta) break;
+    }
+    $('tbodyTramos').innerHTML = html;
+    $('lblBase').textContent = fmt(M.baseIRPF);
+    $('lblDeds').textContent = fmt(M.dedTot);
+    $('lblTasa').textContent = (M.tasaD*100).toFixed(0)+'%';
+    $('lblBruto').textContent = fmt(M.irpfBruto);
+    $('lblNeto').textContent = fmt(M.irpf);
+    $('lblEff').textContent = (M.baseIRPF? ((M.irpf/M.baseIRPF)*100).toFixed(1)+'%':'—');
+
+    // Notas de ajustes
+    const notas=[];
+    if(baseIncluyeExtras) notas.push('Incluye seguro y tickets en base IRPF.');
+    if(dedAdic>0) notas.push(`Ajuste adicional IRPF aplicado: +${(dedAdic*100).toFixed(1)}%.`);
+    $('lblNotas').textContent = notas.length? notas.join(' ') : '—';
+
+    // Totales anuales (simplificado)
+    const agMedio = $('aguinaldoMedio').value;
+    const usarVac = +$('useVac').value===1;
+    const vacTotal = +$('vacacionalAnual').value||0;
+    const AN = calcAnual({
+      BPC,sueldo,seguroBen:seg,ticketsBen:tks,hijosCnt,snisRate,baseIncluyeExtras,dedAdic,
+      agMedio, vacAnual:vacTotal, usarVac
+    });
+    $('anIrpf').textContent = fmt(AN.IR);
+    $('anBps').textContent = fmt(AN.BP);
+    $('anLiquido').textContent = fmt(AN.LQ);
+    $('anProm').textContent = fmt(Math.round(AN.LQ/12));
+    $('anDet').textContent = `Estimación con 2× aguinaldo (${fmt(AN.agValor)} c/u)${usarVac&&vacTotal>0?` y vacacional declarado ${fmt(vacTotal)} (impacta solo IRPF)`:''}.`;
+  }
+
+  // ===== Eventos
+  document.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', calcAll);
+    el.addEventListener('change', calcAll);
+  });
+  $('calcBtn').addEventListener('click', calcAll);
+  $('adv').addEventListener('toggle', ()=>{ if($('adv').open) calcAll(); });
+
+  // ===== Init
+  renderCfg(); updateStamp(); calcAll();
+</script>
+</body>
+</html>
